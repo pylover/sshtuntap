@@ -6,9 +6,10 @@ from easycli import SubCommand, Argument, Root
 
 from .console import info, ok, error, warning
 from .texteditor import TextFile
+from .configuration import configure, settings
+from . import linux
 
 
-settings = None
 DEFAULT_CIDR = '192.168.22.0/24'
 ROOT = os.environ.setdefault('SSHTUNTAPSERVER_ROOT', '/').rstrip('/')
 DEFAULT_CONFIGURATIONFILENAME = os.environ.setdefault(
@@ -127,9 +128,8 @@ class ServerRoot(Root):
     ]
 
     def _execute_subcommand(self, args):
-        global settings
-        settings = pymlconf.Root(BUILTIN_CONFIGURATION, context=os.environ)
         filename = args.configurationfilename
+        configure()
 
         if path.exists(filename):
             settings.loadfile(filename)
