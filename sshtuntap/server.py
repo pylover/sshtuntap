@@ -4,11 +4,17 @@ from os import path
 import pymlconf
 from easycli import SubCommand, Argument, Root
 
+from .console import info, ok, error
 
-DEFAULT_CONFIGURATIONFILENAME = '/etc/sshtuntap.yml'
+
+DEFAULT_CONFIGURATIONFILENAME = \
+    os.environ.setdefault('SSHTUNTAP_CONFIGURATIONFILE', '/etc/sshtuntap.yml')
 BUILTIN_CONFIGURATION = '''
+
 cidr: 192.168.22.0/24
+
 '''
+
 
 settings = pymlconf.Root(BUILTIN_CONFIGURATION, context=os.environ)
 
@@ -17,6 +23,7 @@ class InfoCommand(SubCommand):
     __command__ = 'info'
 
     def __call__(self, args):
+        print(f'Configuration file: {args.configurationfilename}')
         print(f'CIDR: {settings.cidr}')
 
 
@@ -68,7 +75,6 @@ class UserCommand(SubCommand):
 
 
 class ServerRoot(Root):
-    __command__ = 'server'
     __aliases__ = ['s']
     __completion__ = True
     __arguments__ = [
@@ -89,11 +95,19 @@ class ServerRoot(Root):
         if path.exists(filename):
             settings.loadfile(filename)
 
+        elif args.command != 'setup':
+            error(f'Configuration file does not exists: {filename}')
+            return 1
+
         super()._execute_subcommand(args)
 
     def __call__(self, args):
         if args.version:
-            print(__version__)
+            from sshtuntap import __version__ as version
+            print(version)
+            return
+
+        super().__call__(args)
 
 
 def main():
