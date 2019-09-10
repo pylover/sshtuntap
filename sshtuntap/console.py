@@ -1,5 +1,6 @@
 import sys
 
+
 class colors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -12,16 +13,18 @@ class colors:
     RESET = '\033[0m'
 
 
-
-def ok(msg):
-    print(f'{colors.OKGREEN}{msg}{colors.RESET}')
+def ok(msg, *a, **kw):
+    print(f'{colors.OKGREEN}{msg}{colors.RESET}', *a, **kw)
 
 
 def info(*args):
     print(*args)
 
 
-def error(msg):
-    print(f'{colors.FAIL}{msg}{colors.RESET}', file=sys.stderr)
+def error(msg, *a, **kw):
+    print(f'{colors.FAIL}{msg}{colors.RESET}', *a, file=sys.stderr, **kw)
 
+
+def warning(msg, *a, **kw):
+    print(f'{colors.WARNING}{msg}{colors.RESET}', *a, **kw)
 

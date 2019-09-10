@@ -4,19 +4,30 @@ from os import path
 import pymlconf
 from easycli import SubCommand, Argument, Root
 
-from .console import info, ok, error
+from .console import info, ok, error, warning
+from .texteditor import TextFile
 
 
-DEFAULT_CONFIGURATIONFILENAME = \
-    os.environ.setdefault('SSHTUNTAP_CONFIGURATIONFILE', '/etc/sshtuntap.yml')
-BUILTIN_CONFIGURATION = '''
-
-cidr: 192.168.22.0/24
-
+settings = None
+DEFAULT_CIDR = '192.168.22.0/24'
+ROOT = os.environ.setdefault('SSHTUNTAPSERVER_ROOT', '/').rstrip('/')
+DEFAULT_CONFIGURATIONFILENAME = os.environ.setdefault(
+    'SSHTUNTAPSERVER_CONFIGURATIONFILE',
+    f'{ROOT}/etc/sshtuntap.yml'
+)
+SSHSERVER_CONFIGURATIONFILENAME = os.environ.setdefault(
+    'SSHTUNTAPSERVER_SSHSERVERlCONFIGURATIONFILE',
+    f'{ROOT}/etc/ssh/sshd_config'
+)
+SSHDSETTINGS = '''
+# Added by sshtuntap-server
+PermitTunnel yes
 '''
 
 
-settings = pymlconf.Root(BUILTIN_CONFIGURATION, context=os.environ)
+BUILTIN_CONFIGURATION = f'''
+cidr: {DEFAULT_CIDR}
+'''
 
 
 class InfoCommand(SubCommand):
@@ -30,7 +41,12 @@ class InfoCommand(SubCommand):
 class SetupCommand(SubCommand):
     __command__ = 'setup'
     __arguments__ = [
-        Argument('cidr', help='The network/mask (aka CIDR)')
+        Argument(
+            'cidr',
+            nargs='?',
+            default=DEFAULT_CIDR,
+            help=f'The network/mask (aka CIDR), default: {DEFAULT_CIDR}'
+        )
     ]
 
     def __call__(self, args):
@@ -41,6 +57,26 @@ class SetupCommand(SubCommand):
 
         ok(f'Settings are saved into {args.configurationfilename}')
 
+        sshdfile = TextFile(SSHSERVER_CONFIGURATIONFILENAME)
+        sshdfile.commentout('PermitTunnel (?!yes)')
+
+        if not sshdfile.hasline('PermitTunnel yes'):
+            sshdfile.append(SSHDSETTINGS)
+
+            ok(
+                f'The following lines are added into the ' \
+                f'{SSHSERVER_CONFIGURATIONFILENAME}'
+            )
+            info(SSHDSETTINGS)
+            warning('Do you want to restart the openssh-server?')
+            if input('You may restart the SSH server manualy ' \
+                'if you choose no[Y/n]:') in ('y', 'Y'):
+
+                print('Restarting ssh server...')
+        else:
+            ok(f'PermitTunnel is already enabled in {sshdfile.filename}.')
+
+        sshdfile.saveifneeded()
 
 
 class UserAddCommand(SubCommand):
@@ -91,7 +127,10 @@ class ServerRoot(Root):
     ]
 
     def _execute_subcommand(self, args):
+        global settings
+        settings = pymlconf.Root(BUILTIN_CONFIGURATION, context=os.environ)
         filename = args.configurationfilename
+
         if path.exists(filename):
             settings.loadfile(filename)
 
