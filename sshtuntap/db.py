@@ -1,0 +1,3 @@
+
+def init(filename):
+    global 
