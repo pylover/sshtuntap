@@ -96,7 +96,7 @@ class UserAddCommand(SubCommand):
     def __call__(self, args):
         username = args.name
         if not linux.userexists(username):
-            info(f'User {username} is  exists, ignoring.')
+            info(f'User {username} is exists, ignoring.')
 
         network.addhost(username)
         ok(f'User {username} was created successfully')
