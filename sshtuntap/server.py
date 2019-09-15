@@ -104,16 +104,6 @@ class HostDeleteCommand(SubCommand):
             ok(f'Host {hostname} has been deleted successfully')
 
 
-class HostCommand(SubCommand):
-    __command__ = 'hosts'
-    __aliases__ = ['h', 'host']
-    __arguments__ = [
-        HostAddCommand,
-        HostListCommand,
-        HostDeleteCommand,
-    ]
-
-
 class ServerRoot(Root):
     __aliases__ = ['s']
     __completion__ = True
@@ -127,7 +117,9 @@ class ServerRoot(Root):
         Argument('-V', '--version', action='store_true'),
         InfoCommand,
         SetupCommand,
-        HostCommand,
+        HostAddCommand,
+        HostListCommand,
+        HostDeleteCommand,
     ]
 
     def _execute_subcommand(self, args):
