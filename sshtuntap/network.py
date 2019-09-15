@@ -5,9 +5,8 @@ from ipaddress import ip_address, IPv4Network
 import yaml
 
 from .configuration import settings
-from .exceptions import UserExistsError
 from . import linux
-from .console import ok
+from .console import ok, warning
 
 
 USER_CONFIGURATIONFILE = '.ssh/tuntap.yml'
@@ -63,15 +62,15 @@ def createinterface(userconfig):
     serveraddr = userconfig['addresses']['server']
     netmask = userconfig['netmask']
     owner = userconfig['name']
-    lines = [
-        'allow-hotplug {ifname}',
-        'auto {ifname}',
-        'iface tun1 inet static',
-        '  address {server}',
-        '  endpoint {client}',
-        '  netmask {netmask}',
-        '  pre-up ip tuntap add mode tun dev {ifname} user {owner} group {owner}',
-    ]
+    lines = [f'{i}\n' for i in [
+        f'allow-hotplug {ifname}',
+        f'auto {ifname}',
+        f'iface {ifname} inet static',
+        f'  address {serveraddr}',
+        f'  endpoint {clientaddr}',
+        f'  netmask {netmask}',
+        f'  pre-up ip tuntap add mode tun dev {ifname} user {owner} group {owner}',
+    ]]
 
     ifacefilename = path.join('/etc/network/interfaces.d', ifname)
     with open(ifacefilename, 'w') as f:
@@ -85,7 +84,8 @@ def createinterface(userconfig):
 def addhost(user):
     configurationfile = path.join(user.pw_dir, USER_CONFIGURATIONFILE)
     if path.exists(configurationfile):
-        raise UserExistsError()
+        warning(f'User is already exists: {user.pw_name}')
+        warning(f'Overwriting the file: {configurationfile}')
 
     network = getnetwork()
     client, server, index = assign(network)

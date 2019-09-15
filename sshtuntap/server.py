@@ -8,7 +8,6 @@ from easycli import SubCommand, Argument, Root
 from .console import info, ok, error, warning
 from .texteditor import TextFile
 from .configuration import configure, settings
-from .exceptions import UserExistsError
 from . import network
 from . import linux
 
@@ -101,12 +100,8 @@ class UserAddCommand(SubCommand):
             error(f'User {username} is not exists, please create it first.')
             return 1
 
-        try:
-            network.addhost(user)
-        except UserExistsError:
-            error(f'User is already exists: {user.pw_name}')
-        else:
-            ok(f'User {username} was created successfully')
+        network.addhost(user)
+        ok(f'User {username} was created successfully')
 
 
 class UserListCommand(SubCommand):

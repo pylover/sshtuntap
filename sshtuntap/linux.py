@@ -11,4 +11,4 @@ def userexists(name):
 
 def shell(cmd):
     print(f'Shell: {cmd}')
-    return sp.run(cmd, shell=True, check=True, stdout=sp.PIPE, stderr=sp.PIPE)
+    return sp.run(cmd, shell=True, check=True)  #, stdout=sp.PIPE, stderr=sp.PIPE)
