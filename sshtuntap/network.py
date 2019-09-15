@@ -5,7 +5,6 @@ from ipaddress import ip_address, IPv4Network
 
 import yaml
 
-from .configuration import settings
 from . import linux
 from .console import ok, warning, info
 
@@ -92,13 +91,12 @@ def createinterface(host):
     linux.shell(f'ifup {ifname}')
 
 
-def addhost(user):
+def addhost(network, user):
     configurationfile = path.join(user.pw_dir, USER_CONFIGURATIONFILE)
     if path.exists(configurationfile):
         warning(f'User is already exists: {user.pw_name}')
         warning(f'Overwriting the file: {configurationfile}')
 
-    network = getnetwork()
     client, server, index = assign(network)
     info(f'Assigned addresses: {client} {server}')
 

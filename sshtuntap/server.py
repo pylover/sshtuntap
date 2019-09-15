@@ -1,36 +1,30 @@
 import os
 import pwd
 from os import path
+from ipaddress import IPv4Network
 
 import pymlconf
 from easycli import SubCommand, Argument, Root
 
 from .console import info, ok, error, warning
-from .texteditor import TextFile
-from .configuration import configure, settings
 from . import network
 from . import linux
 
 
 DEFAULT_CIDR = '192.168.22.0/24'
-ROOT = os.environ.setdefault('SSHTUNTAPSERVER_ROOT', '/').rstrip('/')
-DEFAULT_CONFIGURATIONFILENAME = os.environ.setdefault(
-    'SSHTUNTAPSERVER_CONFIGURATIONFILE',
-    f'{ROOT}/etc/sshtuntap.yml'
-)
-SSHSERVER_CONFIGURATIONFILENAME = os.environ.setdefault(
-    'SSHTUNTAPSERVER_SSHSERVERlCONFIGURATIONFILE',
-    f'{ROOT}/etc/ssh/sshd_config'
-)
-SSHDSETTINGS = '''
-# Added by sshtuntap-server
-PermitTunnel yes
-'''
+DEFAULT_CONFIGURATIONFILENAME = f'/etc/sshtuntap.yml'
+SSHSERVER_CONFIGURATIONFILENAME = f'/etc/ssh/sshd_config'
 
 
 BUILTIN_CONFIGURATION = f'''
 cidr: {DEFAULT_CIDR}
 '''
+
+settings = pymlconf.DeferredRoot()
+
+
+def configure():
+    settings.initialize(BUILTIN_CONFIGURATION, context=os.environ)
 
 
 class InfoCommand(SubCommand):
@@ -60,24 +54,6 @@ class SetupCommand(SubCommand):
 
         ok(f'Settings are saved into {args.configurationfilename}')
 
-        sshdfile = TextFile(SSHSERVER_CONFIGURATIONFILENAME)
-        sshdfile.commentout('PermitTunnel (?!yes)')
-
-        if not sshdfile.hasline('PermitTunnel yes'):
-            sshdfile.append(SSHDSETTINGS)
-
-            ok(
-                f'The following lines are added into the ' \
-                f'{SSHSERVER_CONFIGURATIONFILENAME}'
-            )
-            info(SSHDSETTINGS)
-            warning('please restart the openssh-server.')
-
-        else:
-            ok(f'PermitTunnel is already enabled in {sshdfile.filename}.')
-
-        sshdfile.saveifneeded()
-
 
 class HostAddCommand(SubCommand):
     __command__ = 'add'
@@ -100,7 +76,7 @@ class HostAddCommand(SubCommand):
             error(f'Host {hostname} is not exists, please create it first.')
             return 1
 
-        network.addhost(host)
+        network.addhost(IPv4Network(settings.cidr), host)
         ok(f'Host {hostname} was created successfully')
 
 
