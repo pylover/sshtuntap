@@ -17,6 +17,7 @@ USER = os.environ['USER']
 DEFAULT_CONFIGURATIONFILENAME = f'{HOME}/.ssh/tuntap.yml'
 BUILTIN_CONFIGURATION = f'''
 hostname:
+localuser:
 '''
 
 settings = pymlconf.DeferredRoot()
@@ -41,11 +42,16 @@ class SetupCommand(SubCommand):
     ]
 
     def __call__(self, args):
+        if USER == 'root':
+            error('Do not run this command by the root user')
+            return 1
+
         filename = args.configurationfilename
         hostname = args.hostname
         shell(f'scp {USER}@{hostname}:.ssh/tuntap.yml {filename}')
         settings.loadfile(filename)
         settings.hostname = hostname
+        settings.localuser = USER
 
         with open(filename, 'w') as f:
             f.write(settings.dumps())
@@ -71,8 +77,13 @@ class ConnectCommand(SubCommand):
                 return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
 
     def __call__(self, args):
+        if USER != 'root':
+            error('Please run this command as root.')
+            return 1
+
         hostname = settings.hostname
-        user = settings.name
+        remoteuser = settings.remoteuser
+        localuser = settings.localuser
         index = settings.index
         ifname = f'tun{index}'
         clientaddr = settings.addresses.client
@@ -88,7 +99,7 @@ class ConnectCommand(SubCommand):
         #sshargs.append('-o"ControlMaster no"')
 
         try:
-            shell(f'ip tuntap add mode tun dev {ifname} user {user} group {user}')
+            shell(f'ip tuntap add mode tun dev {ifname} user {localuser} group {localuser}')
             shell(
                 f'ip address add dev {ifname} {clientaddr}/{netmask} ' \
                 f'peer {serveraddr}/{netmask}'
@@ -97,8 +108,8 @@ class ConnectCommand(SubCommand):
             shell(f'ip route add {hostaddr} via {gateway}')
             shell(f'ip route replace default via {serveraddr}')
             shell(
-                f'sudo -u {user} ssh {user}@{hostname} -Nw {index}:{index} ' \
-                f'{" ".join(sshargs)}'
+                f'sudo -u {localuser} ssh {remoteuser}@{hostname} ' \
+                f'-Nw {index}:{index} {" ".join(sshargs)}'
             )
         finally:
             shell(f'ip tuntap delete mode tun dev {ifname}', check=False)

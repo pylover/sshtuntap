@@ -71,7 +71,7 @@ def createinterface(host):
     clientaddr = host['addresses']['client']
     serveraddr = host['addresses']['server']
     netmask = host['netmask']
-    owner = host['name']
+    owner = host['remoteuser']
     lines = [f'{i}\n' for i in [
         f'allow-hotplug {ifname}',
         f'auto {ifname}',
@@ -101,7 +101,7 @@ def addhost(network, user):
     info(f'Assigned addresses: {client} {server}')
 
     userconfiguration = dict(
-        name=user.pw_name,
+        remoteuser=user.pw_name,
         uid=user.pw_uid,
         gid=user.pw_gid,
         shell=user.pw_shell,
