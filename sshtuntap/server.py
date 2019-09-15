@@ -79,7 +79,7 @@ class SetupCommand(SubCommand):
         sshdfile.saveifneeded()
 
 
-class UserAddCommand(SubCommand):
+class HostAddCommand(SubCommand):
     __command__ = 'add'
     __aliases__ = ['a']
     __arguments__ = [
@@ -93,18 +93,18 @@ class UserAddCommand(SubCommand):
     ]
 
     def __call__(self, args):
-        username = args.name
+        hostname = args.name
         try:
-            user = pwd.getpwnam(username)
+            host = pwd.getpwnam(hostname)
         except KeyError:
-            error(f'User {username} is not exists, please create it first.')
+            error(f'Host {hostname} is not exists, please create it first.')
             return 1
 
-        network.addhost(user)
-        ok(f'User {username} was created successfully')
+        network.addhost(host)
+        ok(f'Host {hostname} was created successfully')
 
 
-class UserListCommand(SubCommand):
+class HostListCommand(SubCommand):
     __command__ = 'list'
     __aliases__ = ['l']
 
@@ -114,30 +114,30 @@ class UserListCommand(SubCommand):
             info(addrs['client'], addrs['server'], u)
 
 
-class UserDeleteCommand(SubCommand):
+class HostDeleteCommand(SubCommand):
     __command__ = 'delete'
-    __aliases__ = ['del']
+    __aliases__ = ['d', 'del']
     __arguments__ = [
         Argument('name'),
     ]
 
     def __call__(self, args):
-        username = args.name
+        hostname = args.name
         try:
-            network.deletehost(username)
+            network.deletehost(hostname)
         except KeyError:
-            error(f'Host: {username} is not exists.')
+            error(f'Host: {hostname} is not exists.')
         else:
-            ok(f'Host {username} has been deleted successfully')
+            ok(f'Host {hostname} has been deleted successfully')
 
 
-class UserCommand(SubCommand):
-    __command__ = 'user'
-    __aliases__ = ['u']
+class HostCommand(SubCommand):
+    __command__ = 'hosts'
+    __aliases__ = ['h', 'host']
     __arguments__ = [
-        UserAddCommand,
-        UserListCommand,
-        UserDeleteCommand,
+        HostAddCommand,
+        HostListCommand,
+        HostDeleteCommand,
     ]
 
 
@@ -154,7 +154,7 @@ class ServerRoot(Root):
         Argument('-V', '--version', action='store_true'),
         InfoCommand,
         SetupCommand,
-        UserCommand,
+        HostCommand,
     ]
 
     def _execute_subcommand(self, args):

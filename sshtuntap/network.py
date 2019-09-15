@@ -7,7 +7,7 @@ import yaml
 
 from .configuration import settings
 from . import linux
-from .console import ok, warning
+from .console import ok, warning, info
 
 
 USER_CONFIGURATIONFILE = '.ssh/tuntap.yml'
@@ -100,6 +100,7 @@ def addhost(user):
 
     network = getnetwork()
     client, server, index = assign(network)
+    info(f'Assigned addresses: {client} {server}')
 
     userconfiguration = dict(
         name=user.pw_name,
