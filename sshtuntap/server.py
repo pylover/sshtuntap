@@ -1,4 +1,5 @@
 import os
+import pwd
 from os import path
 
 import pymlconf
@@ -7,6 +8,8 @@ from easycli import SubCommand, Argument, Root
 from .console import info, ok, error, warning
 from .texteditor import TextFile
 from .configuration import configure, settings
+from .exceptions import UserExistsError
+from . import network
 from . import linux
 
 
@@ -69,11 +72,8 @@ class SetupCommand(SubCommand):
                 f'{SSHSERVER_CONFIGURATIONFILENAME}'
             )
             info(SSHDSETTINGS)
-            warning('Do you want to restart the openssh-server?')
-            if input('You may restart the SSH server manualy ' \
-                'if you choose no[Y/n]:') in ('y', 'Y'):
+            warning('please restart the openssh-server.')
 
-                print('Restarting ssh server...')
         else:
             ok(f'PermitTunnel is already enabled in {sshdfile.filename}.')
 
@@ -95,11 +95,28 @@ class UserAddCommand(SubCommand):
 
     def __call__(self, args):
         username = args.name
-        if not linux.userexists(username):
-            info(f'User {username} is exists, ignoring.')
+        try:
+            user = pwd.getpwnam(username)
+        except KeyError:
+            error(f'User {username} is not exists, please create it first.')
+            return 1
 
-        network.addhost(username)
-        ok(f'User {username} was created successfully')
+        try:
+            network.addhost(user)
+        except UserExistsError:
+            error(f'User is already exists: {user.pw_name}')
+        else:
+            ok(f'User {username} was created successfully')
+
+
+class UserListCommand(SubCommand):
+    __command__ = 'list'
+    __aliases__ = ['l']
+
+    def __call__(self, args):
+        for u, c in network.getallhosts():
+            addrs = c['addresses']
+            info(addrs['client'], addrs['server'], u)
 
 
 class UserCommand(SubCommand):
@@ -107,6 +124,7 @@ class UserCommand(SubCommand):
     __aliases__ = ['u']
     __arguments__ = [
         UserAddCommand,
+        UserListCommand,
     ]
 
 
@@ -133,7 +151,7 @@ class ServerRoot(Root):
         if path.exists(filename):
             settings.loadfile(filename)
 
-        elif args.command != 'setup':
+        elif args.command not in ('setup', 'install'):
             error(f'Configuration file does not exists: {filename}')
             return 1
 

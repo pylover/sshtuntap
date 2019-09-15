@@ -1,8 +1,14 @@
 import pwd
 from os import path
-import ipaddress
+from ipaddress import ip_address, IPv4Network
 
-import pymlconf
+import yaml
+
+from .configuration import settings
+from .exceptions import UserExistsError
+
+
+USER_CONFIGURATIONFILE = '.ssh/tuntap.yml'
 
 
 def getallhosts():
@@ -10,47 +16,62 @@ def getallhosts():
     # filter users which has home dirs
     for i in pwd.getpwall():
         if i.pw_uid >= 1000 and not i.pw_shell.endswith('nologin'):
-            configurationfile = path.join(i.pw_dir, '.ssh/tuntap')
+            configurationfile = path.join(i.pw_dir, USER_CONFIGURATIONFILE)
             if not path.exists(configurationfile):
                 continue
 
-            yield i.pw_name, configurationfile
+            with open(configurationfile) as f:
+                conf = yaml.load(f)
+
+            yield i.pw_name, conf
 
 
-
-def assign():
-    hosts = {}
+def getallassignedaddresses():
     for u, c in getallhosts():
-        hosts[u] = pymlconf.Root()
-        hosts[u].loadfile(c)
+        yield ip_address(c['addresses']['client'])
+        yield ip_address(c['addresses']['server'])
 
-    print(hosts)
-    # hosts -> set(ip1, ip2, ..., ipn)
 
-    # Find all hosts
-    # create an ip network using ipaddress module
-    net = ipaddress.IPv4Network('192.168.1.0/24')
+def assign(network):
+    addresses = set(getallassignedaddresses())
+    result = []
 
     # find two free addresses
-    for ip in net.hosts():
+    for ip in network.hosts():
         if ip in addresses:
             continue
 
-        if len(freeaddresses) >= 2:
+        if len(result) >= 2:
             break
 
-        freeaddresses.append(ip)
+        result.append(ip)
 
-    return addresses
-
-
-def addhost(username):
-    ip1, ip2 = assign()
+    client, server = result
+    return client, server, int(client) - int(network.network_address)
 
 
-    # Fetch current network
-    # Assign two new addresses
-    # create or update the ~/.ssh/tuntap.yml
+def getnetwork():
+    return IPv4Network(settings.cidr)
+
+
+def addhost(user):
+    configurationfile = path.join(user.pw_dir, USER_CONFIGURATIONFILE)
+    if path.exists(configurationfile):
+        raise UserExistsError()
+
+    network = getnetwork()
+    client, server, index = assign(network)
+    print(client, server)
+
+    userconfiguration = dict(
+        name=user.pw_name,
+        shell=user.pw_shell,
+        addresses=dict(client=str(client), server=str(server)),
+        index=index
+    )
+
+    with open(configurationfile, 'w') as f:
+        yaml.dump(userconfiguration, f, default_flow_style=False)
+
     # Network intnerfaces.d
-    pass
 
