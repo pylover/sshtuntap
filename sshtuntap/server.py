@@ -13,9 +13,6 @@ from . import linux
 
 DEFAULT_CIDR = '192.168.22.0/24'
 DEFAULT_CONFIGURATIONFILENAME = f'/etc/sshtuntap.yml'
-SSHSERVER_CONFIGURATIONFILENAME = f'/etc/ssh/sshd_config'
-
-
 BUILTIN_CONFIGURATION = f'''
 cidr: {DEFAULT_CIDR}
 '''
