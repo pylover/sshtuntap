@@ -9,6 +9,6 @@ def userexists(name):
         return False
 
 
-def shell(cmd):
+def shell(cmd, check=True):
     print(f'Shell: {cmd}')
-    return sp.run(cmd, shell=True, check=True)  #, stdout=sp.PIPE, stderr=sp.PIPE)
+    return sp.run(cmd, shell=True, check=check)  #, stdout=sp.PIPE, stderr=sp.PIPE)

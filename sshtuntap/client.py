@@ -85,11 +85,13 @@ class ConnectCommand(SubCommand):
         if args.verbose:
             sshargs.append('-v')
 
+        #sshargs.append('-o"ControlMaster no"')
+
         try:
-            shell(f'ip tuntap add mode tun dev {ifname}')
+            shell(f'ip tuntap add mode tun dev {ifname} user {user} group {user}')
             shell(
                 f'ip address add dev {ifname} {clientaddr}/{netmask} ' \
-                f'peer {serveraddr}'
+                f'peer {serveraddr}/{netmask}'
             )
             shell(f'ip link set up dev {ifname}')
             shell(f'ip route add {hostaddr} via {gateway}')
@@ -99,9 +101,9 @@ class ConnectCommand(SubCommand):
                 f'{" ".join(sshargs)}'
             )
         finally:
-            shell(f'ip tuntap delete mode tun dev {ifname}')
-            shell(f'ip route del {hostaddr} via {gateway}')
-            shell(f'ip route replace default via {gateway}')
+            shell(f'ip tuntap delete mode tun dev {ifname}', check=False)
+            shell(f'ip route del {hostaddr} via {gateway}', check=False)
+            shell(f'ip route replace default via {gateway}', check=False)
 
 
 class ClientRoot(Root):

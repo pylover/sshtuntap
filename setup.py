@@ -15,7 +15,7 @@ with open(
 
 dependencies = [
     'easycli',
-    'pymlconf',
+    'pymlconf >= 2',
 ]
 
 
