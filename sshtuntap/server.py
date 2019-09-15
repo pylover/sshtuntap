@@ -114,12 +114,30 @@ class UserListCommand(SubCommand):
             info(addrs['client'], addrs['server'], u)
 
 
+class UserDeleteCommand(SubCommand):
+    __command__ = 'delete'
+    __aliases__ = ['del']
+    __arguments__ = [
+        Argument('name'),
+    ]
+
+    def __call__(self, args):
+        username = args.name
+        try:
+            network.deletehost(username)
+        except KeyError:
+            error(f'Host: {username} is not exists.')
+        else:
+            ok(f'Host {username} has been deleted successfully')
+
+
 class UserCommand(SubCommand):
     __command__ = 'user'
     __aliases__ = ['u']
     __arguments__ = [
         UserAddCommand,
         UserListCommand,
+        UserDeleteCommand,
     ]
 
 

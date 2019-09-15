@@ -1,3 +1,4 @@
+import os
 import pwd
 from os import path, chown
 from ipaddress import ip_address, IPv4Network
@@ -10,6 +11,16 @@ from .console import ok, warning
 
 
 USER_CONFIGURATIONFILE = '.ssh/tuntap.yml'
+
+
+def gethost(name):
+    user = pwd.getpwnam(name)
+    configurationfilename = path.join(user.pw_dir, USER_CONFIGURATIONFILE)
+    if not path.exists(configurationfilename):
+        raise KeyError(name)
+
+    with open(configurationfilename) as f:
+        return yaml.load(f), configurationfilename
 
 
 def getallhosts():
@@ -55,13 +66,13 @@ def getnetwork():
     return IPv4Network(settings.cidr)
 
 
-def createinterface(userconfig):
-    index = str(userconfig['index'])
+def createinterface(host):
+    index = str(host['index'])
     ifname = f'tun{index}'
-    clientaddr = userconfig['addresses']['client']
-    serveraddr = userconfig['addresses']['server']
-    netmask = userconfig['netmask']
-    owner = userconfig['name']
+    clientaddr = host['addresses']['client']
+    serveraddr = host['addresses']['server']
+    netmask = host['netmask']
+    owner = host['name']
     lines = [f'{i}\n' for i in [
         f'allow-hotplug {ifname}',
         f'auto {ifname}',
@@ -89,7 +100,6 @@ def addhost(user):
 
     network = getnetwork()
     client, server, index = assign(network)
-    print(client, server)
 
     userconfiguration = dict(
         name=user.pw_name,
@@ -106,4 +116,22 @@ def addhost(user):
 
     chown(configurationfile, user.pw_uid, user.pw_gid)
     createinterface(userconfiguration)
+
+
+def deletehost(username):
+    host, configurationfilename = gethost(username)
+    index = str(host['index'])
+    ifname = f'tun{index}'
+    linux.shell(f'ifdown {ifname}')
+
+    # remove the interfaces.d file
+    ifacefilename = path.join('/etc/network/interfaces.d', ifname)
+    if path.exists(ifacefilename):
+        os.remove(ifacefilename)
+
+    linux.shell(f'ip tuntap delete {ifname} mode tun')
+
+    # remove the .ssh/tuntap.yml file
+    if path.exists(configurationfilename):
+        os.remove(configurationfilename)
 
