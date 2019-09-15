@@ -1,11 +1,13 @@
 import pwd
-from os import path
+from os import path, chown
 from ipaddress import ip_address, IPv4Network
 
 import yaml
 
 from .configuration import settings
 from .exceptions import UserExistsError
+from . import linux
+from .console import ok
 
 
 USER_CONFIGURATIONFILE = '.ssh/tuntap.yml'
@@ -54,6 +56,32 @@ def getnetwork():
     return IPv4Network(settings.cidr)
 
 
+def createinterface(userconfig):
+    index = str(userconfig['index'])
+    ifname = f'tun{index}'
+    clientaddr = userconfig['addresses']['client']
+    serveraddr = userconfig['addresses']['server']
+    netmask = userconfig['netmask']
+    owner = userconfig['name']
+    lines = [
+        'allow-hotplug {ifname}',
+        'auto {ifname}',
+        'iface tun1 inet static',
+        '  address {server}',
+        '  endpoint {client}',
+        '  netmask {netmask}',
+        '  pre-up ip tuntap add mode tun dev {ifname} user {owner} group {owner}',
+    ]
+
+    ifacefilename = path.join('/etc/network/interfaces.d', ifname)
+    with open(ifacefilename, 'w') as f:
+        f.writelines(lines)
+
+    ok(f'File {ifacefilename} has been created successfully.')
+    linux.shell(f'service networking restart')
+    linux.shell(f'ifup {ifname}')
+
+
 def addhost(user):
     configurationfile = path.join(user.pw_dir, USER_CONFIGURATIONFILE)
     if path.exists(configurationfile):
@@ -65,13 +93,17 @@ def addhost(user):
 
     userconfiguration = dict(
         name=user.pw_name,
+        uid=user.pw_uid,
+        gid=user.pw_gid,
         shell=user.pw_shell,
         addresses=dict(client=str(client), server=str(server)),
+        netmask=str(network.netmask),
         index=index
     )
 
     with open(configurationfile, 'w') as f:
         yaml.dump(userconfiguration, f, default_flow_style=False)
 
-    # Network intnerfaces.d
+    chown(configurationfile, user.pw_uid, user.pw_gid)
+    createinterface(userconfiguration)
 
