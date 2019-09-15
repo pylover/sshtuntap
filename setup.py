@@ -32,8 +32,8 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'sshtuntap-server = sshtuntap.server:main',
-            'sshtuntap-client = sshtuntap.client:main',
+            'ssh-tuntap-server = sshtuntap.server:main',
+            'ssh-tuntap-client = sshtuntap.client:main',
         ]
     },
     license='MIT',
