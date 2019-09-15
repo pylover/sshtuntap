@@ -1,17 +1,20 @@
 import os
+import socket
+import struct
 from os import path
+import argparse
 
 import pymlconf
 from easycli import SubCommand, Argument, Root
 
 from .console import info, ok, error, warning
-from . import linux
+from .linux import shell
 
 
 
 HOME = os.environ['HOME']
 USER = os.environ['USER']
-DEFAULT_CONFIGURATIONFILENAME = f'{HOME}/.ssh/sshtuntap.yml'
+DEFAULT_CONFIGURATIONFILENAME = f'{HOME}/.ssh/tuntap.yml'
 BUILTIN_CONFIGURATION = f'''
 hostname:
 '''
@@ -40,7 +43,7 @@ class SetupCommand(SubCommand):
     def __call__(self, args):
         filename = args.configurationfilename
         hostname = args.hostname
-        linux.shell(f'scp {USER}@{hostname}:.ssh/tuntap.yml {filename}')
+        shell(f'scp {USER}@{hostname}:.ssh/tuntap.yml {filename}')
         settings.loadfile(filename)
         settings.hostname = hostname
 
@@ -48,6 +51,57 @@ class SetupCommand(SubCommand):
             f.write(settings.dumps())
 
         ok(f'Settings are saved into {filename}')
+
+
+class ConnectCommand(SubCommand):
+    __command__ = 'connect'
+    __aliases__ = ['c']
+    __arguments__ = [
+        Argument('-v', '--verbose', action='store_true', help='Verbose')
+    ]
+
+    def getdefaultgateway(self):
+        """Returns the current default gateway from `/proc`
+        """
+        with open('/proc/net/route') as fh:
+            for line in fh:
+                fields = line.strip().split()
+                if fields[1] != '00000000' or not int(fields[3], 16) & 2:
+                    continue
+                return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+
+    def __call__(self, args):
+        hostname = settings.hostname
+        user = settings.name
+        index = settings.index
+        ifname = f'tun{index}'
+        clientaddr = settings.addresses.client
+        serveraddr = settings.addresses.server
+        netmask = settings.netmask
+        gateway = self.getdefaultgateway()
+        hostaddr = socket.gethostbyname(hostname)
+        sshargs = []
+
+        if args.verbose:
+            sshargs.append('-v')
+
+        try:
+            shell(f'ip tuntap add mode tun dev {ifname}')
+            shell(
+                f'ip address add dev {ifname} {clientaddr}/{netmask} ' \
+                f'peer {serveraddr}'
+            )
+            shell(f'ip link set up dev {ifname}')
+            shell(f'ip route add {hostaddr} via {gateway}')
+            shell(f'ip route replace default via {serveraddr}')
+            shell(
+                f'sudo -u {user} ssh {user}@{hostname} -Nw {index}:{index} ' \
+                f'{" ".join(sshargs)}'
+            )
+        finally:
+            shell(f'ip tuntap delete mode tun dev {ifname}')
+            shell(f'ip route del {hostaddr} via {gateway}')
+            shell(f'ip route replace default via {gateway}')
 
 
 class ClientRoot(Root):
@@ -62,6 +116,7 @@ class ClientRoot(Root):
         ),
         Argument('-V', '--version', action='store_true'),
         SetupCommand,
+        ConnectCommand,
     ]
 
     def _execute_subcommand(self, args):
