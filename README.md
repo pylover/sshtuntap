@@ -88,7 +88,7 @@ ssh-tuntap-server setup 192.168.100.0/24
 ```
 
 
-### Add `foo` host
+#### Add `foo` host
 
 You have to create the server user mannualy (depends on your distro).
 
