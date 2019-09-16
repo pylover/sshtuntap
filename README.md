@@ -1,18 +1,11 @@
 # sshtuntap
 
-Linux TUN/TAP using ssh and python3
+Linux TUN/TAP using the `openssh` and `Python3`
 
 This package comes with two command line interfaces:
 
 - ssh-tuntap-server
 - ssh-tuntap-client
-
-The server cli stands for setup network, add, delete and list user. 
-this is not a daemon, its just a utility to perform user and tuntap interface 
-management and ip address assignment.
-
-Then clinet command line stands for fetch host configuration from the server 
-and perform connection using the `ssh -w`.
 
 this tutorial show's how to use this project:
 
@@ -54,6 +47,11 @@ sudo ssh-tuntap-client --help
 ```
 
 ### Server setup
+
+The server cli stands for setup network, add, delete and list users. 
+this is just a utility to perform user and tuntap interface 
+management and ip address assignment.
+
 
 #### OpenSSH Server
 
@@ -106,6 +104,10 @@ ssh-tuntap-server hosts add foo
 
 
 ### Client
+
+Clinet command line stands for fetch host configuration from the server 
+and perform connection using the `ssh -w`.
+
 
 ```bash
 ssh-copy-id foo@example.com
