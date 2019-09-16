@@ -127,7 +127,7 @@ sudo ssh-tuntap-clinet connect
 
 ### Nat
 
-Edit `/etc/sysctl.conf` to enable ip forwarding.
+Edit `/etc/sysctl.conf` on the server to enable ip forwarding.
 
 ```bash
 net.ipv4.ip_forward = 1
