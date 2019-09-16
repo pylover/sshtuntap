@@ -142,6 +142,6 @@ sudo sysctl -p
 Configure NAT
 
 ```bash
-sudo iptables -tnat -APOSTROUTING -s192.168.100.0/24 -jACCEPT
+sudo iptables -tnat -APOSTROUTING -s192.168.100.0/24 -jMASQUERADE
 ```
 
