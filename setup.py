@@ -43,7 +43,8 @@ setup(
         'Natural Language :: English',
         'Development Status :: 5 - Production/Stable',
         'License :: Other/Proprietary License',
-        'Operating System :: Linux',
+        'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3.6',
-        ]
-    )
+        'Programming Language :: Python :: 3.7',
+    ]
+)
