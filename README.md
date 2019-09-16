@@ -125,3 +125,23 @@ Use this to connect:
 sudo ssh-tuntap-clinet connect
 ```
 
+### Nat
+
+Edit `/etc/sysctl.conf` to enable ip forwarding.
+
+```bash
+net.ipv4.ip_forward = 1
+```
+
+Run `sysctl -p` to refresh with the new configuration
+
+```bash
+sudo sysctl -p
+```
+
+Configure NAT
+
+```bash
+sudo iptables -tnat -APOSTROUTING -s192.168.100.0/24 -jACCEPT
+```
+
