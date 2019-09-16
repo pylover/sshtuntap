@@ -4,8 +4,8 @@ Linux TUN/TAP using the `openssh` and `Python3`
 
 This package comes with two command line interfaces:
 
-- ssh-tuntap-server
-- ssh-tuntap-client
+* ssh-tuntap-server
+* ssh-tuntap-client
 
 this tutorial show's how to use this project:
 
