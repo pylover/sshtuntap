@@ -99,6 +99,11 @@ Run these commands on the server:
 
 ```bash
 sudo adduser foo
+```
+
+Then use this command create `/home/foo/.ssh/tuntap.yml`:
+
+```bash
 ssh-tuntap-server hosts add foo
 ```
 
