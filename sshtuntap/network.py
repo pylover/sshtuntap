@@ -87,8 +87,8 @@ def createinterface(host):
         f.writelines(lines)
 
     ok(f'File {ifacefilename} has been created successfully.')
-    linux.shell(f'service networking restart')
-    linux.shell(f'ifup {ifname}')
+    linux.shell(f'service networking restart', check=False)
+    linux.shell(f'ifup {ifname}', check=False)
 
 
 def addhost(network, user):
