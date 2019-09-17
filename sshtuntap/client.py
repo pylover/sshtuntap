@@ -48,9 +48,10 @@ class SetupCommand(SubCommand):
 
         filename = args.configurationfilename
         hostname = args.hostname
-        shell(f'scp {USER}@{hostname}:.ssh/tuntap.yml {filename}')
+        shell(f'scp {hostname}:.ssh/tuntap.yml {filename}')
         settings.loadfile(filename)
-        settings.hostname = hostname
+        settings.hostname = \
+            hostname.split('@')[1] if '@' in hostname else hostname
         settings.localuser = USER
 
         with open(filename, 'w') as f:
