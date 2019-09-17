@@ -42,8 +42,8 @@ Open new bash instance to perform changes.
 
 
 ```bash
-sudo ssh-tuntap-server --help
-sudo ssh-tuntap-client --help
+ssh-tuntap-server --help
+ssh-tuntap-client --help
 ```
 
 ### Server setup
@@ -52,6 +52,14 @@ The server cli stands for setup network, add, delete and list users.
 this is just a utility to perform user and tuntap interface 
 management and ip address assignment.
 
+
+#### Install ifupdown package
+
+Install ifupdown package in server.
+
+```bash
+apt install ifupdown
+```
 
 #### OpenSSH Server
 
@@ -104,7 +112,7 @@ sudo adduser foo
 Then use this command create `/home/foo/.ssh/tuntap.yml`:
 
 ```bash
-ssh-tuntap-server hosts add foo
+ssh-tuntap-server add foo
 ```
 
 
