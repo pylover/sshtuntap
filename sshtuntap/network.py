@@ -78,7 +78,6 @@ def createinterface(host):
     ifname = f'tun{index}'
     clientaddr = host['addresses']['client']
     serveraddr = host['addresses']['server']
-    netmask = host['netmask']
     owner = host['remoteuser']
     lines = [f'{i}\n' for i in [
         f'allow-hotplug {ifname}',
@@ -86,7 +85,7 @@ def createinterface(host):
         f'iface {ifname} inet static',
         f'  address {serveraddr}',
         f'  endpoint {clientaddr}',
-        f'  netmask {netmask}',
+        f'  netmask 31',
         f'  pre-up ip tuntap add mode tun dev {ifname} user {owner} group {owner}',
     ]]
 
@@ -97,10 +96,7 @@ def createinterface(host):
     ok(f'File {ifacefilename} has been created successfully.')
 
     shell(f'ip tuntap add mode tun dev {ifname} user {owner} group {owner}')
-    shell(
-        f'ip address add dev {ifname} {serveraddr}/{netmask} ' \
-        f'peer {clientaddr}/{netmask}'
-    )
+    shell(f'ip address add dev {ifname} {serveraddr}/31 peer {clientaddr}/31')
     shell(f'ip link set up dev {ifname}')
 
 
@@ -119,7 +115,7 @@ def addhost(network, user):
         gid=user.pw_gid,
         shell=user.pw_shell,
         addresses=dict(client=str(client), server=str(server)),
-        netmask=str(network.netmask),
+        netmask='31',
         index=index
     )
 
