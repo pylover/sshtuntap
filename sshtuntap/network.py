@@ -85,7 +85,7 @@ def createinterface(host):
         f'iface {ifname} inet static',
         f'  netmask 31',
         f'  pre-up ip tuntap add mode tun dev {ifname} user {owner} group {owner}',
-        f'  pre-up ip address add dev {ifname} {serveraddr}/31 peer {clientaddr}/31')
+        f'  pre-up ip address add dev {ifname} {serveraddr}/31 peer {clientaddr}/31',
     ]]
 
     ifacefilename = path.join('/etc/network/interfaces.d', ifname)
