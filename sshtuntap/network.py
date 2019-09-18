@@ -105,7 +105,7 @@ def addhost(network, user):
         warning(f'User is already exists: {user.pw_name}')
         warning(f'Overwriting the file: {configurationfile}')
 
-    client, server, index = assign(network)
+    server, client, index = assign(network)
     info(f'Assigned addresses: {client} {server}')
 
     userconfiguration = dict(
@@ -114,7 +114,7 @@ def addhost(network, user):
         gid=user.pw_gid,
         shell=user.pw_shell,
         addresses=dict(client=str(client), server=str(server)),
-        netmask='31',
+        netmask=str(network.netmask),
         index=index
     )
 
