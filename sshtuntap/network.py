@@ -5,7 +5,7 @@ from ipaddress import ip_address, IPv4Network
 
 import yaml
 
-from . import linux
+from .linux import shell
 from .console import ok, warning, info
 
 
@@ -87,8 +87,13 @@ def createinterface(host):
         f.writelines(lines)
 
     ok(f'File {ifacefilename} has been created successfully.')
-    linux.shell(f'service networking restart', check=False)
-    linux.shell(f'ifup {ifname}', check=False)
+
+    shell(f'ip tuntap add mode tun dev {ifname} user {owner} group {owner}')
+    shell(
+        f'ip address add dev {ifname} {serveraddr}/{netmask} ' \
+        f'peer {clientaddr}/{netmask}'
+    )
+    shell(f'ip link set up dev {ifname}')
 
 
 def addhost(network, user):
@@ -121,14 +126,14 @@ def deletehost(username):
     host, configurationfilename = gethost(username)
     index = str(host['index'])
     ifname = f'tun{index}'
-    linux.shell(f'ifdown {ifname}')
+    shell(f'ifdown {ifname}')
 
     # remove the interfaces.d file
     ifacefilename = path.join('/etc/network/interfaces.d', ifname)
     if path.exists(ifacefilename):
         os.remove(ifacefilename)
 
-    linux.shell(f'ip tuntap delete {ifname} mode tun')
+    shell(f'ip tuntap delete {ifname} mode tun')
 
     # remove the .ssh/tuntap.yml file
     if path.exists(configurationfilename):
