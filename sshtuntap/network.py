@@ -4,12 +4,20 @@ from os import path, chown
 from ipaddress import ip_address, IPv4Network
 
 import yaml
+try:
+    from yaml import CLoader as Loader
+except ImportError:  # pragma: no cover
+    from yaml import Loader
 
 from .linux import shell
 from .console import ok, warning, info
 
 
 USER_CONFIGURATIONFILE = '.ssh/tuntap.yml'
+
+
+def yamlload(s):
+    return yaml.load(s, Loader)
 
 
 def gethost(name):
@@ -19,7 +27,7 @@ def gethost(name):
         raise KeyError(name)
 
     with open(configurationfilename) as f:
-        return yaml.load(f), configurationfilename
+        return yamlload(f), configurationfilename
 
 
 def getallhosts():
@@ -32,7 +40,7 @@ def getallhosts():
                 continue
 
             with open(configurationfile) as f:
-                conf = yaml.load(f)
+                conf = yamlload(f)
 
             yield i.pw_name, conf
 
@@ -114,6 +122,11 @@ def addhost(network, user):
         netmask=str(network.netmask),
         index=index
     )
+
+    sshdirectory = path.dirname(configurationfile)
+    if not path.exists(sshdirectory):
+        os.mkdir(sshdirectory, mode=0o700)
+        chown(sshdirectory, user.pw_uid, user.pw_gid)
 
     with open(configurationfile, 'w') as f:
         yaml.dump(userconfiguration, f, default_flow_style=False)
