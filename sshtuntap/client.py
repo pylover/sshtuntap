@@ -113,8 +113,10 @@ class ConnectCommand(SubCommand):
                 f'-Nw {index}:{index} {" ".join(sshargs)}'
             )
         finally:
+            info('Terminating...')
             shell(f'ip tuntap delete mode tun dev {ifname}', check=False)
             shell(f'ip route del {hostaddr} via {gateway}', check=False)
+            shell(f'ip route del {hostaddr} via {gateway}')
             shell(f'ip route replace default via {gateway}', check=False)
 
 
