@@ -106,7 +106,7 @@ class ConnectCommand(SubCommand):
                 f'peer {serveraddr}/{netmask}'
             )
             shell(f'ip link set up dev {ifname}')
-            shell(f'ip route add {hostaddr} via {gateway}')
+            shell(f'ip route add {hostaddr} via {gateway}', check=False)
             shell(f'ip route replace default via {serveraddr}')
             shell(
                 f'sudo -u {localuser} ssh {remoteuser}@{hostname} ' \
@@ -116,7 +116,6 @@ class ConnectCommand(SubCommand):
             info('Terminating...')
             shell(f'ip tuntap delete mode tun dev {ifname}', check=False)
             shell(f'ip route del {hostaddr} via {gateway}', check=False)
-            shell(f'ip route del {hostaddr} via {gateway}')
             shell(f'ip route replace default via {gateway}', check=False)
 
 
