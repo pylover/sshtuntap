@@ -1,8 +1,11 @@
 import os
+import time
 import socket
 import struct
 from os import path
 import argparse
+import traceback
+from subprocess import CalledProcessError
 
 import pymlconf
 from easycli import SubCommand, Argument, Root
@@ -22,6 +25,9 @@ localuser:
 
 settings = pymlconf.DeferredRoot()
 
+
+class SSHRetryError(Exception):
+    pass
 
 def configure():
     settings.initialize(BUILTIN_CONFIGURATION, context=os.environ)
@@ -64,7 +70,41 @@ class ConnectCommand(SubCommand):
     __command__ = 'connect'
     __aliases__ = ['c']
     __arguments__ = [
-        Argument('-v', '--verbose', action='store_true', help='Verbose')
+        Argument('-v', '--verbose', action='store_true', help='Verbose'),
+        Argument(
+            '-i', '--aliveinterval',
+            type=int,
+            default=2,
+            help=\
+                'ssh ServerAliveInterval option, see man ssh_config. ' \
+                'default is: 2'
+        ),
+        Argument(
+            '-m', '--alivecountmax',
+            type=int,
+            default=1,
+            help=\
+                'ssh ServerAliveCountMax option, see man ssh_config. ' \
+                'default is: 1'
+        ),
+        Argument(
+            '-r', '--retrymax',
+            type=int,
+            default=0,
+            help='Maximum retry, default is: 0, infinite!'
+        ),
+        Argument(
+            '--connecttimeout',
+            type=int,
+            default=2,
+            help='ssh ConnectTimeout option, default is: 2.'
+        ),
+        Argument(
+            '--connectionattempts',
+            type=int,
+            default=2,
+            help='ssh ConnectionAttempts option, default is: 2.'
+        )
     ]
 
     def getdefaultgateway(self):
@@ -76,6 +116,47 @@ class ConnectCommand(SubCommand):
                 if fields[1] != '00000000' or not int(fields[3], 16) & 2:
                     continue
                 return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+
+    def connect(self, gateway, hostaddr, hostname, args):
+        index = settings.index
+        hostname = settings.hostname
+        remoteuser = settings.remoteuser
+        localuser = settings.localuser
+        serveraddr = settings.addresses.server
+        c = args.retrymax
+        infinite = c == 0
+        sshargs = []
+
+        if args.verbose:
+            sshargs.append('-v')
+
+        sshargs.append(f'-o"ServerAliveInterval {args.aliveinterval}"')
+        sshargs.append(f'-o"ServerAliveCountMax {args.alivecountmax}"')
+        sshargs.append(f'-o"ConnectTimeout {args.connecttimeout}"')
+        sshargs.append(f'-o"ConnectionAttempts {args.connectionattempts}"')
+
+        while infinite or (c > 0):
+            try:
+                shell(f'ip route replace {hostaddr} via {gateway}')
+                shell(f'ip route replace default via {serveraddr}')
+                shell(
+                    f'sudo -u {localuser} ssh {remoteuser}@{hostname} ' \
+                    f'-Nw {index}:{index} {" ".join(sshargs)}'
+                )
+            except CalledProcessError as ex:
+                if ex.returncode < 0:
+                    break
+
+            except:
+                traceback.print_exc()
+                time.sleep(3)
+
+            finally:
+                shell(f'ip route del {hostaddr} via {gateway}', check=False)
+                shell(f'ip route replace default via {gateway}', check=False)
+
+            time.sleep(1)
+            c -= 1
 
     def __call__(self, args):
         if USER != 'root':
@@ -90,14 +171,11 @@ class ConnectCommand(SubCommand):
         clientaddr = settings.addresses.client
         serveraddr = settings.addresses.server
         netmask = settings.netmask
-        gateway = self.getdefaultgateway()
         hostaddr = socket.gethostbyname(hostname)
-        sshargs = []
 
-        if args.verbose:
-            sshargs.append('-v')
-
-        #sshargs.append('-o"ControlMaster no"')
+        gateway = self.getdefaultgateway()
+        if gateway is None:
+            error(f'Invalid default gateway: {gateway}')
 
         try:
             shell(f'ip tuntap add mode tun dev {ifname} user {localuser} group {localuser}')
@@ -106,17 +184,10 @@ class ConnectCommand(SubCommand):
                 f'peer {serveraddr}/{netmask}'
             )
             shell(f'ip link set up dev {ifname}')
-            shell(f'ip route add {hostaddr} via {gateway}', check=False)
-            shell(f'ip route replace default via {serveraddr}')
-            shell(
-                f'sudo -u {localuser} ssh {remoteuser}@{hostname} ' \
-                f'-Nw {index}:{index} {" ".join(sshargs)}'
-            )
+            self.connect(gateway, hostaddr, hostname, args)
         finally:
             info('Terminating...')
             shell(f'ip tuntap delete mode tun dev {ifname}', check=False)
-            shell(f'ip route del {hostaddr} via {gateway}', check=False)
-            shell(f'ip route replace default via {gateway}', check=False)
 
 
 class ClientRoot(Root):
