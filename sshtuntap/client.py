@@ -147,6 +147,9 @@ class ConnectCommand(SubCommand):
                 if ex.returncode < 0:
                     break
 
+            except KeyboardInterrupt:
+                break
+
             except:
                 traceback.print_exc()
                 time.sleep(3)
