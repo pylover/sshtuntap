@@ -5,7 +5,8 @@ import struct
 from os import path
 import argparse
 import traceback
-from subprocess import CalledProcessError
+import signal
+from subprocess import CalledProcessError, Popen
 
 import pymlconf
 from easycli import SubCommand, Argument, Root
@@ -72,39 +73,11 @@ class ConnectCommand(SubCommand):
     __arguments__ = [
         Argument('-v', '--verbose', action='store_true', help='Verbose'),
         Argument(
-            '-i', '--aliveinterval',
-            type=int,
-            default=2,
-            help=\
-                'ssh ServerAliveInterval option, see man ssh_config. ' \
-                'default is: 2'
-        ),
-        Argument(
-            '-m', '--alivecountmax',
-            type=int,
-            default=1,
-            help=\
-                'ssh ServerAliveCountMax option, see man ssh_config. ' \
-                'default is: 1'
-        ),
-        Argument(
             '-r', '--retrymax',
             type=int,
             default=0,
             help='Maximum retry, default is: 0, infinite!'
         ),
-        Argument(
-            '--connecttimeout',
-            type=int,
-            default=2,
-            help='ssh ConnectTimeout option, default is: 2.'
-        ),
-        Argument(
-            '--connectionattempts',
-            type=int,
-            default=2,
-            help='ssh ConnectionAttempts option, default is: 2.'
-        )
     ]
 
     def getdefaultgateway(self):
@@ -123,6 +96,7 @@ class ConnectCommand(SubCommand):
         remoteuser = settings.remoteuser
         localuser = settings.localuser
         serveraddr = settings.addresses.server
+        terminating = False
         c = args.retrymax
         infinite = c == 0
         sshargs = []
@@ -130,29 +104,33 @@ class ConnectCommand(SubCommand):
         if args.verbose:
             sshargs.append('-v')
 
-        sshargs.append(f'-o"ServerAliveInterval {args.aliveinterval}"')
-        sshargs.append(f'-o"ServerAliveCountMax {args.alivecountmax}"')
-        sshargs.append(f'-o"ConnectTimeout {args.connecttimeout}"')
-        sshargs.append(f'-o"ConnectionAttempts {args.connectionattempts}"')
+        sshargs.append(f'-o"ServerAliveInterval 1"')
+        sshargs.append(f'-o"ServerAliveCountMax 1"')
+        sshargs.append(f'-o"ConnectTimeout 10"')
+        sshargs.append(f'-o"ConnectionAttempts 20"')
+
+        def term(sig, frame):
+            nonlocal terminating
+            terminating = True
+            os.killpg(os.getpgid(sshprocess.pid), signal.SIGTERM)
+
+        signal.signal(signal.SIGTERM, term)
+        signal.signal(signal.SIGINT, term)
 
         while infinite or (c > 0):
             try:
                 shell(f'ip route replace {hostaddr} via {gateway}')
                 shell(f'ip route replace default via {serveraddr}')
-                shell(
+                sshprocess = Popen(
                     f'sudo -u {localuser} ssh {remoteuser}@{hostname} ' \
-                    f'-Nw {index}:{index} {" ".join(sshargs)}'
+                    f'-Nw {index}:{index} {" ".join(sshargs)}',
+                    shell=True,
+                    preexec_fn=os.setsid,
                 )
-            except CalledProcessError as ex:
-                if ex.returncode < 0:
+                sshprocess.wait()
+
+                if terminating or sshprocess.returncode <= 0:
                     break
-
-            except KeyboardInterrupt:
-                break
-
-            except:
-                traceback.print_exc()
-                time.sleep(3)
 
             finally:
                 shell(f'ip route del {hostaddr} via {gateway}', check=False)
