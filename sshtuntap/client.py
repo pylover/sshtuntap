@@ -104,7 +104,7 @@ class ConnectCommand(SubCommand):
         if args.verbose:
             sshargs.append('-v')
 
-        sshargs.append(f'-o"ServerAliveInterval 1"')
+        sshargs.append(f'-o"ServerAliveInterval 10"')
         sshargs.append(f'-o"ServerAliveCountMax 1"')
         sshargs.append(f'-o"ConnectTimeout 10"')
         sshargs.append(f'-o"ConnectionAttempts 20"')
