@@ -31,8 +31,8 @@ sudo -H pip3 install git+https://github.com/pylover/sshtuntap.git
 #### Bash auto completion
 
 ```bash
-sudo ssh-tuntap-server completion install
-sudo ssh-tuntap-client completion install
+sudo ssh-tuntap-server completion install   # On server
+sudo ssh-tuntap-client completion install   # On client
 ```
 
 Open new bash instance to perform changes.
@@ -51,15 +51,6 @@ ssh-tuntap-client --help
 The server cli stands for setup network, add, delete and list users. 
 this is just a utility to perform user and tuntap interface 
 management and ip address assignment.
-
-
-#### Install ifupdown package
-
-Install ifupdown package in server.
-
-```bash
-apt install ifupdown
-```
 
 #### OpenSSH Server
 
@@ -83,16 +74,22 @@ see `man 5 sshd_config` for more info.
 Restart the ssh server to perform the changes.
 
 
-#### Define Network
+#### Create Network and systemd service
 
 ```bash
-ssh-tuntap-server setup
+ssh-tuntap-server install
 ```
 
 Or
 
 ```bash
-ssh-tuntap-server setup 192.168.100.0/24
+ssh-tuntap-server install 192.168.100.0/24
+```
+
+you may use `uninstall` sub-command to remove systemd service.
+
+```bash
+ssh-tuntap-server uninstall
 ```
 
 
