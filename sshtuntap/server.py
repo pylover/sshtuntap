@@ -32,8 +32,16 @@ class InfoCommand(SubCommand):
         print(f'CIDR: {settings.cidr}')
 
 
-class SetupCommand(SubCommand):
-    __command__ = 'setup'
+class UninstallCommand(SubCommand):
+    __command__ = 'uninstall'
+
+    def __call__(self, args):
+        linux.shell(f'rm {args.configurationfilename}')
+        linux.deletesystemdservice('sshtuntap-server')
+
+
+class InstallCommand(SubCommand):
+    __command__ = 'install'
     __arguments__ = [
         Argument(
             'cidr',
@@ -44,12 +52,26 @@ class SetupCommand(SubCommand):
     ]
 
     def __call__(self, args):
-
         settings.cidr = args.cidr
         with open(args.configurationfilename, 'w') as f:
             f.write(settings.dumps())
 
         ok(f'Settings are saved into {args.configurationfilename}')
+        linux.createsystemdservice('sshtuntap-server', f'''
+[Unit]
+Description=sshtuntap initializer
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart={sys.argv[0]} {args.configurationfilename} initialize
+RemainAfterExit=true
+ExecStop={sys.argv[0]} {args.configurationfilename} dispose
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target
+''')
 
 
 class HostAddCommand(SubCommand):
@@ -118,7 +140,7 @@ class DisposeCommand(SubCommand):
 
     def __call__(self, args):
         network.dispose()
-        ok('Network successfully dispose.')
+        ok('Network successfully disposed.')
 
 
 class ServerRoot(Root):
@@ -134,7 +156,8 @@ class ServerRoot(Root):
         InitCommand,
         DisposeCommand,
         InfoCommand,
-        SetupCommand,
+        InstallCommand,
+        UninstallCommand,
         HostAddCommand,
         HostListCommand,
         HostDeleteCommand,
