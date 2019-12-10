@@ -14,8 +14,8 @@ def shell(cmd, check=True):
     return sp.run(cmd, shell=True, check=check)  #, stdout=sp.PIPE, stderr=sp.PIPE)
 
 def deletesystemdservice(instance):
-    shell('systemctl stop {instance}.service')
-    shell('systemctl disable {instance}.service')
+    shell(f'systemctl stop {instance}.service')
+    shell(f'systemctl disable {instance}.service')
     shell(f'rm /etc/systemd/system/{instance}.service')
     shell('systemctl daemon-reload')
 
@@ -24,8 +24,8 @@ def createsystemdservice(instance, content):
         f.write(content)
 
     shell('systemctl daemon-reload')
-    shell('systemctl enable {instance}.service')
-    shell('systemctl start {instance}.service')
+    shell(f'systemctl enable {instance}.service')
+    shell(f'systemctl start {instance}.service')
 
 
 
