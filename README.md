@@ -31,8 +31,8 @@ sudo -H pip3 install git+https://github.com/pylover/sshtuntap.git
 #### Bash auto completion
 
 ```bash
-sudo ssh-tuntap-server completion install   # On server
-sudo ssh-tuntap-client completion install   # On client
+ssh-tuntap-server completion install   # On server
+ssh-tuntap-client completion install   # On client
 ```
 
 Open new bash instance to perform changes.
@@ -77,19 +77,19 @@ Restart the ssh server to perform the changes.
 #### Create Network and systemd service
 
 ```bash
-ssh-tuntap-server install
+sudo ssh-tuntap-server install
 ```
 
 Or
 
 ```bash
-ssh-tuntap-server install 192.168.100.0/24
+sudo ssh-tuntap-server install 192.168.100.0/24
 ```
 
 you may use `uninstall` sub-command to remove systemd service.
 
 ```bash
-ssh-tuntap-server uninstall
+sudo ssh-tuntap-server uninstall
 ```
 
 
@@ -109,7 +109,7 @@ sudo adduser foo
 Then use this command create `/home/foo/.ssh/tuntap.yml`:
 
 ```bash
-ssh-tuntap-server add foo
+sudo ssh-tuntap-server add foo
 ```
 
 
