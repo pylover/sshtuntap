@@ -65,9 +65,9 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart={sys.argv[0]} {args.configurationfilename} initialize
+ExecStart={sys.argv[0]} -c {args.configurationfilename} initialize
 RemainAfterExit=true
-ExecStop={sys.argv[0]} {args.configurationfilename} dispose
+ExecStop={sys.argv[0]} -c {args.configurationfilename} dispose
 StandardOutput=journal
 
 [Install]
