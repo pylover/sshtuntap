@@ -22,9 +22,9 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/ssh-tuntap-server -c ${CONFIGPATH} initialize
+ExecStart=/usr/local/bin/ssh-tuntap-server -c ${CONFIGFILE} initialize
 RemainAfterExit=true
-ExecStop=/usr/local/bin/ssh-tuntap-server -c ${CONFIGPATH} dispose
+ExecStop=/usr/local/bin/ssh-tuntap-server -c ${CONFIGFILE} dispose
 StandardOutput=journal
 
 [Install]
