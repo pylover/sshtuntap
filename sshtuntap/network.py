@@ -79,24 +79,19 @@ def createinterface(host):
     clientaddr = host['addresses']['client']
     serveraddr = host['addresses']['server']
     owner = host['remoteuser']
-    lines = [f'{i}\n' for i in [
-        f'allow-hotplug {ifname}',
-        f'auto {ifname}',
-        f'iface {ifname} inet static',
-        f'  netmask 31',
-        f'  pre-up ip tuntap add mode tun dev {ifname} user {owner} group {owner}',
-        f'  pre-up ip address add dev {ifname} {serveraddr}/31 peer {clientaddr}/31',
-    ]]
-
-    ifacefilename = path.join('/etc/network/interfaces.d', ifname)
-    with open(ifacefilename, 'w') as f:
-        f.writelines(lines)
-
-    ok(f'File {ifacefilename} has been created successfully.')
 
     shell(f'ip tuntap add mode tun dev {ifname} user {owner} group {owner}')
     shell(f'ip address add dev {ifname} {serveraddr}/31 peer {clientaddr}/31')
     shell(f'ip link set up dev {ifname}')
+    ok(f'Interface {ifname} has been created successfully.')
+
+
+def deleteinterface(host):
+    index = str(host['index'])
+    ifname = f'tun{index}'
+
+    shell(f'ip tuntap del mode tun dev {ifname}')
+    ok(f'Interface {ifname} has been deleted successfully.')
 
 
 def addhost(network, user):
@@ -146,4 +141,13 @@ def deletehost(username):
     # remove the .ssh/tuntap.yml file
     if path.exists(configurationfilename):
         os.remove(configurationfilename)
+
+
+def initialize():
+    for name, host in getallhosts():
+        createinterface(host)
+
+def dispose():
+    for name, host in getallhosts():
+        deleteinterface(host)
 

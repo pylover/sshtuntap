@@ -70,7 +70,7 @@ class HostAddCommand(SubCommand):
         try:
             host = pwd.getpwnam(hostname)
         except KeyError:
-            error(f'Host {hostname} is not exists, please create it first.')
+            error(f'User {hostname} is not exists, please create it first.')
             return 1
 
         network.addhost(IPv4Network(settings.cidr), host)
@@ -104,8 +104,24 @@ class HostDeleteCommand(SubCommand):
             ok(f'Host {hostname} has been deleted successfully')
 
 
+class InitCommand(SubCommand):
+    __command__ = 'initialize'
+    __aliases__ = ['init']
+
+    def __call__(self, args):
+        network.initialize()
+        ok('Network successfully initialized')
+
+
+class DisposeCommand(SubCommand):
+    __command__ = 'dispose'
+
+    def __call__(self, args):
+        network.dispose()
+        ok('Network successfully dispose.')
+
+
 class ServerRoot(Root):
-    __aliases__ = ['s']
     __completion__ = True
     __arguments__ = [
         Argument(
@@ -115,6 +131,8 @@ class ServerRoot(Root):
             help=f'default: {DEFAULT_CONFIGURATIONFILENAME}'
         ),
         Argument('-V', '--version', action='store_true'),
+        InitCommand,
+        DisposeCommand,
         InfoCommand,
         SetupCommand,
         HostAddCommand,
