@@ -131,12 +131,7 @@ def deletehost(username):
     ifname = f'tun{index}'
     shell(f'ifdown {ifname}')
 
-    # remove the interfaces.d file
-    ifacefilename = path.join('/etc/network/interfaces.d', ifname)
-    if path.exists(ifacefilename):
-        os.remove(ifacefilename)
-
-    shell(f'ip tuntap delete {ifname} mode tun')
+    deleteinterface(host)
 
     # remove the .ssh/tuntap.yml file
     if path.exists(configurationfilename):
