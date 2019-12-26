@@ -2,10 +2,10 @@ import os
 import time
 import socket
 import struct
-from os import path
 import argparse
 import traceback
 import signal
+from os import path
 from subprocess import CalledProcessError, Popen
 
 import pymlconf
@@ -193,7 +193,7 @@ class ClientRoot(Root):
         if path.exists(filename):
             settings.loadfile(filename)
 
-        elif args.command not in ('setup', ):
+        elif args.command not in ('setup', 'completion'):
             error(f'Configuration file does not exists: {filename}')
             return 1
 
