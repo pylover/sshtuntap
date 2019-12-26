@@ -70,8 +70,12 @@ PermitTunnel point-to-point
 
 see `man 5 sshd_config` for more info.
 
-
 Restart the ssh server to perform the changes.
+
+```bash
+service ssh restart
+```
+
 
 
 #### Create Network and systemd service
@@ -83,7 +87,7 @@ sudo ssh-tuntap-server install
 Or
 
 ```bash
-sudo ssh-tuntap-server install 192.168.100.0/24
+sudo ssh-tuntap-server install 192.168.22.0/24
 ```
 
 you may use `uninstall` sub-command to remove systemd service.
@@ -106,7 +110,7 @@ Run these commands on the server:
 sudo adduser foo
 ```
 
-Then use this command create `/home/foo/.ssh/tuntap.yml`:
+Then use this command to create `/home/foo/.ssh/tuntap.yml`:
 
 ```bash
 sudo ssh-tuntap-server add foo
@@ -147,6 +151,12 @@ sudo sysctl -p
 Configure NAT
 
 ```bash
-sudo iptables -tnat -APOSTROUTING -s192.168.100.0/24 -jMASQUERADE
+sudo iptables -tnat -APOSTROUTING -s192.168.22.0/24 -jMASQUERADE
+```
+
+iptables persistency
+
+```bash
+sudo apt install iptables-persistent netfilter-persistent
 ```
 
