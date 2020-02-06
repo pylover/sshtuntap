@@ -119,7 +119,7 @@ sudo ssh-tuntap-server add foo
 
 ### Client
 
-Clinet command line stands for fetch host configuration from the server 
+Client command line stands for fetch host configuration from the server 
 and perform connection using the `ssh -w`.
 
 
@@ -131,7 +131,7 @@ ssh-tuntap-client setup foo@example.com
 Use this to connect:
 
 ```bash
-sudo ssh-tuntap-clinet connect
+sudo ssh-tuntap-client connect
 ```
 
 ### Nat
