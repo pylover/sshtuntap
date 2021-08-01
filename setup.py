@@ -14,6 +14,7 @@ with open(
 
 
 dependencies = [
+    'netifaces',
     'easycli',
     'pymlconf >= 2',
 ]

@@ -9,6 +9,7 @@ from os import path
 from subprocess import CalledProcessError, Popen
 
 import pymlconf
+import netifaces
 from easycli import SubCommand, Argument, Root
 
 from .console import info, ok, error, warning
@@ -73,6 +74,10 @@ class ConnectCommand(SubCommand):
     __arguments__ = [
         Argument('-v', '--verbose', action='store_true', help='Verbose'),
         Argument(
+            '-g', '--default-gateway', action='store_true',
+            help='Replace default gateway to route all traffics via the '
+                'newly connected peer'),
+        Argument(
             '-r', '--retrymax',
             type=int,
             default=0,
@@ -83,12 +88,8 @@ class ConnectCommand(SubCommand):
     def getdefaultgateway(self):
         """Returns the current default gateway from `/proc`
         """
-        with open('/proc/net/route') as fh:
-            for line in fh:
-                fields = line.strip().split()
-                if fields[1] != '00000000' or not int(fields[3], 16) & 2:
-                    continue
-                return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+        gws = netifaces.gateways()['default']
+        return gws[netifaces.AF_INET][0]
 
     def connect(self, gateway, hostaddr, hostname, args):
         index = settings.index
@@ -120,7 +121,10 @@ class ConnectCommand(SubCommand):
         while infinite or (c > 0):
             try:
                 shell(f'ip route replace {hostaddr} via {gateway}')
-                shell(f'ip route replace default via {serveraddr}')
+
+                if args.default_gateway:
+                    shell(f'ip route replace default via {serveraddr}')
+
                 sshprocess = Popen(
                     f'sudo -u {localuser} ssh {remoteuser}@{hostname} ' \
                     f'-Nw {index}:{index} {" ".join(sshargs)}',
