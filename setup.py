@@ -16,7 +16,7 @@ with open(
 dependencies = [
     'netifaces',
     'easycli',
-    'pymlconf >= 2',
+    'pymlconf >= 2 , < 3',
 ]
 
 
