@@ -1,3 +1,4 @@
 -r requirements-ci.txt
 ipython
+twine
 
